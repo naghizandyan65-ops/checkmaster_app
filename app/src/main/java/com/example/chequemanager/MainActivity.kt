@@ -1,50 +1,46 @@
-package com.example.chequemanager
+package com.chequemanager.app
 
 import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.activity.viewModels
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
-import com.example.chequemanager.data.Direction
-import com.example.chequemanager.ui.screens.AccountListScreen
-import com.example.chequemanager.ui.screens.ChequeListScreen
-import com.example.chequemanager.ui.screens.DashboardScreen
-import com.example.chequemanager.ui.screens.PersonListScreen
-import com.example.chequemanager.viewmodel.AppViewModel
+import androidx.appcompat.app.AppCompatActivity
+import androidx.navigation.NavController
+import androidx.navigation.findNavController
+import androidx.navigation.ui.AppBarConfiguration
+import androidx.navigation.ui.setupActionBarWithNavController
+import androidx.navigation.ui.setupWithNavController
+import com.chequemanager.app.databinding.ActivityMainBinding
+import com.chequemanager.app.services.ReminderScheduler
+import com.google.android.material.bottomnavigation.BottomNavigationView
 
-class MainActivity : ComponentActivity() {
-    private val vm: AppViewModel by viewModels()
+class MainActivity : AppCompatActivity() {
+
+    private lateinit var binding: ActivityMainBinding
+    private lateinit var navController: NavController
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent {
-            MaterialTheme {
-                Surface(modifier = Modifier) {
-                    AppNavHost(vm)
-                }
-            }
-        }
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+
+        // Setup navigation
+        navController = findNavController(R.id.nav_host_fragment)
+        val appBarConfiguration = AppBarConfiguration(
+            setOf(
+                R.id.navigation_dashboard,
+                R.id.navigation_checks,
+                R.id.navigation_reports,
+                R.id.navigation_settings
+            )
+        )
+        setupActionBarWithNavController(navController, appBarConfiguration)
+        
+        val navView: BottomNavigationView = binding.navView
+        navView.setupWithNavController(navController)
+
+        // Schedule reminders
+        ReminderScheduler.scheduleReminders(this)
     }
-}
 
-@Composable
-fun AppNavHost(vm: AppViewModel) {
-    val navController: NavHostController = rememberNavController()
-
-    NavHost(navController = navController, startDestination = "dashboard") {
-        composable("dashboard") {
-            DashboardScreen(vm) { route -> navController.navigate(route) }
-        }
-        composable("persons") { PersonListScreen(vm) }
-        composable("accounts") { AccountListScreen(vm) }
-        composable("cheques_received") { ChequeListScreen(vm, Direction.RECEIVED) }
-        composable("cheques_paid") { ChequeListScreen(vm, Direction.PAID) }
+    override fun onSupportNavigateUp(): Boolean {
+        return navController.navigateUp() || super.onSupportNavigateUp()
     }
 }
