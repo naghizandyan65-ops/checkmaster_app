@@ -1,32 +1,36 @@
-package com.example.chequemanager.data
+package com.chequemanager.app.data
 
 import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.TypeConverters
 
 @Database(
-    entities = [Person::class, PersonGroup::class, Account::class, Cheque::class, Reminder::class, FinancialYear::class],
-    version = 1,
+    entities = [CheckEntity::class, PersonEntity::class],
+    version = 2,
     exportSchema = false
 )
+@TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
+    abstract fun checkDao(): CheckDao
     abstract fun personDao(): PersonDao
-    abstract fun personGroupDao(): PersonGroupDao
-    abstract fun accountDao(): AccountDao
-    abstract fun chequeDao(): ChequeDao
-    abstract fun reminderDao(): ReminderDao
 
     companion object {
-        @Volatile private var INSTANCE: AppDatabase? = null
+        @Volatile
+        private var INSTANCE: AppDatabase? = null
 
         fun getInstance(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
-                Room.databaseBuilder(
+                val instance = Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
-                    "cheque_manager.db"
-                ).build().also { INSTANCE = it }
+                    "cheque_manager_db"
+                )
+                .fallbackToDestructiveMigration()
+                .build()
+                INSTANCE = instance
+                instance
             }
         }
     }
